@@ -5,8 +5,8 @@ authors = []
 telemetry = true
 cache_dir = './.cache'
 requirements = []
-[contracts.pixel-rewards-core_clar]
-path = 'contracts/pixel-rewards-core_clar.clar'
+[contracts.pixel-rewards-core]
+path = 'contracts/pixel-rewards-core.clar'
 clarity_version = 2
 epoch = 2.5
 [repl.analysis]
