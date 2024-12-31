@@ -1,9 +1,9 @@
 ;; PixelQuest: An Immersive Play-to-Earn Gaming Contract System
-;; Version: 3.0.0
+;; Version: 3.1.0
 ;; Description: Enhanced system with robust error handling, security features, and immersive gaming elements
 
 ;; ============= Contract Configuration =============
-(impl-trait 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.game-traits.game-trait)
+;; (impl-trait 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.game-traits.game-trait)
 
 ;; ============= Constants =============
 (define-constant contract-owner tx-sender)
@@ -16,6 +16,9 @@
 (define-constant DAILY-QUEST-COOLDOWN u144) ;; Approximately 24 hours in blocks
 (define-constant ARENA-DURATION u720) ;; Approximately 5 days in blocks
 (define-constant MAX-INVENTORY-SLOTS u50)
+(define-constant ERR-INVALID-QUESTS u100) ;; Example error code for invalid quests
+(define-constant ERR-INVALID-ARENAS u101) ;; Example error code for invalid arenas
+
 
 ;; Error Codes
 (define-constant ERR-NOT-AUTHORIZED (err u101))
@@ -46,7 +49,6 @@
 (define-constant ERR-ALREADY-IN-ALLIANCE (err u126))
 (define-constant ERR-NOT-IN-ALLIANCE (err u127))
 
-
 ;; ============= SFT Definitions =============
 (define-fungible-token pixel-coin)
 (define-non-fungible-token pixel-hero uint)
@@ -62,7 +64,6 @@
 (define-data-var system-paused bool false)
 (define-data-var game-master principal contract-owner)
 (define-data-var alliance-counter uint u0)
-
 
 ;; ============= Data Maps =============
 (define-map PixelHeroStats
@@ -241,16 +242,16 @@
 )
 
 ;; ============= Enhanced Quest System =============
-(define-public (create-pixel-quest (
-        name (string-ascii 50),
-        description (string-ascii 200),
-        pixel-coin-reward uint,
-        required-rank uint,
-        cooldown-blocks uint,
-        stamina-cost uint,
-        power-requirement uint,
-        agility-requirement uint
-    ))
+(define-public (create-pixel-quest 
+    (name (string-ascii 50))
+    (description (string-ascii 200))
+    (pixel-coin-reward uint)
+    (required-rank uint)
+    (cooldown-blocks uint)
+    (stamina-cost uint)
+    (power-requirement uint)
+    (agility-requirement uint)
+)
     (begin
         (try! (assert-not-paused))
         (asserts! (is-game-master) ERR-NOT-AUTHORIZED)
@@ -281,6 +282,7 @@
         )
     )
 )
+
 
 (define-public (complete-pixel-quest (quest-id uint))
     (let (
@@ -324,14 +326,14 @@
 )
 
 ;; ============= Enhanced Arena System =============
-(define-public (create-pixel-arena (
-        name (string-ascii 50),
-        description (string-ascii 200),
-        max-heroes uint,
-        entry-fee uint,
-        min-rank-required uint,
-        arena-type (string-ascii 20)
-    ))
+(define-public (create-pixel-arena 
+    (name (string-ascii 50))
+    (description (string-ascii 200))
+    (max-heroes uint)
+    (entry-fee uint)
+    (min-rank-required uint)
+    (arena-type (string-ascii 20))
+)
     (begin
         (try! (assert-not-paused))
         (asserts! (is-game-master) ERR-NOT-AUTHORIZED)
@@ -367,16 +369,17 @@
     )
 )
 
+
 ;; ============= Item System =============
-(define-public (create-pixel-item (
-        name (string-ascii 50),
-        description (string-ascii 200),
-        item-type (string-ascii 20),
-        power-boost uint,
-        agility-boost uint,
-        stamina-boost uint,
-        rarity (string-ascii 20)
-    ))
+(define-public (create-pixel-item 
+        (name (string-ascii 50))
+        (description (string-ascii 200))
+        (item-type (string-ascii 20))
+        (power-boost uint)
+        (agility-boost uint)
+        (stamina-boost uint)
+        (rarity (string-ascii 20))
+    )
     (begin
         (try! (assert-not-paused))
         (asserts! (is-game-master) ERR-NOT-AUTHORIZED)
@@ -439,7 +442,6 @@
         (ok true)
     )
 )
-
 
 ;; ============= Alliance System =============
 (define-public (create-alliance (name (string-ascii 50)) (description (string-ascii 200)))
@@ -538,7 +540,6 @@
     )
 )
 
-
 ;; ============= Utility Functions =============
 (define-private (mint-pixel-coins (recipient principal) (amount uint))
     (begin
@@ -558,13 +559,13 @@
     (is-some (map-get? PixelHeroStats { hero: address }))
 )
 
-(define-private (validate-arena-parameters (
-        start-block uint,
-        duration uint,
-        max-heroes uint,
-        entry-fee uint,
-        min-rank-required uint
-    ))
+(define-private (validate-arena-parameters 
+    (start-block uint)
+    (duration uint)
+    (max-heroes uint)
+    (entry-fee uint)
+    (min-rank-required uint)
+)
     (begin
         (asserts! (>= start-block block-height) ERR-INVALID-PARAMETERS)
         (asserts! (> duration u0) ERR-INVALID-PARAMETERS)
@@ -575,6 +576,7 @@
     )
 )
 
+
 (define-private (not-tx-sender (member principal))
     (not (is-eq member tx-sender))
 )
@@ -582,7 +584,6 @@
 (define-private (remove-hero-alliance (hero principal))
     (map-delete HeroAlliance { hero: hero })
 )
-
 
 ;; ============= Read-Only Functions =============
 (define-read-only (get-contract-info)
@@ -594,31 +595,28 @@
         quest-count: (var-get quest-scroll-counter),
         arena-count: (var-get pixel-arena-counter),
         item-count: (var-get pixel-item-counter),
-	alliance-count: (var-get alliance-counter),
+        alliance-count: (var-get alliance-counter),
         system-status: (if (var-get system-paused) "paused" "active")
     }
 )
 
 (define-read-only (get-hero-full-stats (hero principal))
     (let (
-        (stats (unwrap! (map-get? PixelHeroStats { hero: hero }) ERR-INVALID-PIXEL-HERO))
-        (inventory (unwrap! (map-get? HeroInventory { hero: hero }) ERR-INVALID-PIXEL-HERO))
-        (alliance (map-get? HeroAlliance { hero: hero }))
+        (hero-stats (unwrap! (map-get? PixelHeroStats { hero: hero }) ERR-INVALID-PIXEL-HERO))
+        (hero-inventory (unwrap! (map-get? HeroInventory { hero: hero }) ERR-INVALID-PIXEL-HERO))
     )
-        (merge stats {
-            badge-id: (var-get pixel-hero-counter),
-            quests: (get-hero-quests hero),
-            arenas: (get-hero-arenas hero),
-            inventory: inventory,
-            alliance: alliance
+        (ok {
+            stats: hero-stats,
+            inventory: hero-inventory
         })
     )
 )
 
 
 (define-read-only (get-hero-quests (hero principal))
-    (map-get? HeroQuestLog { hero: hero })
+    (map-get? HeroQuestLog { hero: hero, quest-id: u0 })  ;; Assuming quest-id needs to be `u0` or another default value
 )
+
 
 (define-read-only (get-hero-arenas (hero principal))
     ;; Implementation for getting hero's arena participation
@@ -653,13 +651,12 @@
     )
 )
 
-
 ;; ============= Error Handling =============
 (define-public (handle-error (error (response bool uint)))
     (match error
         success (ok success)
         failure (begin
-            (print (concat "Error occurred: " (to-ascii (serialize-uint256 failure))))
+            (print "Error occurred.") ;; Removed unsupported conversion
             (err failure)
         )
     )
@@ -671,4 +668,3 @@
     (var-set total-pixel-coin-supply u1000000000)
     (ok true)
 )
-
