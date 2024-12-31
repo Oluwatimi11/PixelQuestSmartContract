@@ -3,7 +3,6 @@
 ;; Description: Enhanced system with robust error handling, security features, and immersive gaming elements
 
 ;; ============= Contract Configuration =============
-;; (impl-trait 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.game-traits.game-trait)
 
 ;; ============= Constants =============
 (define-constant contract-owner tx-sender)
